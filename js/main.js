@@ -1,4 +1,4 @@
-Stamplay.init('hnewsv2');
+Stamplay.init('hackernewsapp');
 var posts = new Stamplay.Cobject('post').Collection;
 var user = new Stamplay.User().Model;
 
@@ -197,8 +197,8 @@ $(document).ready(function () {
   /****************************/
   /* ALGOLIA TYPEAHEAD SEARCH */
   /****************************/
-  var algolia = algoliasearch('7TMV8F22UN', 'b5e5aa05c764aa1718bc96b793078703');
-  var index = algolia.initIndex('hackernewsposts');
+  var algolia = algoliasearch('KMI9X9PKNJ','69aebc4572e2e34f6724a1f44e1c601c' );
+  var index = algolia.initIndex('posts');
   $('#post-search').typeahead({hint: false}, {
     source: index.ttAdapter({hitsPerPage: 3}),
     displayKey: 'title',
