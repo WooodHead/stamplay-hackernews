@@ -100,7 +100,7 @@ $(document).ready(function () {
 
   var queryParam = {
     sort: '-actions.votes.total',
-    per_page: 30,
+    per_page: 10,
     page: 1,
   };
 
@@ -267,13 +267,13 @@ function getSortedPostList(posts, queryParam) {
 
   posts.fetch(queryParam).then(function () {
     var viewDataArray = [];
-
+    var post_count = (queryParam.page - 1) * queryParam.per_page;
     $('#newstable').html('');
     posts.instance.forEach(function (post, count) {
 
       var viewData = {
         id: post.get('_id'),
-        count : count+1,
+        count : post_count += 1,
         url: post.get('url'),
         shortUrl: Utils.getHostname(post.get('url')),
         title: post.get('title'),
