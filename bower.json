@@ -18,6 +18,6 @@
     "jquery": "1.11.2",
     "jquery-Mustache": "~0.2.7",
     "mustache.js": "mustache#~2.1.3",
-    "stamplay-js-sdk": "~1.2.8"
+    "stamplay-js-sdk": "2.0.2"
   }
 }

@@ -1,44 +1,43 @@
-Stamplay.init('hackernewsapp');
-var posts = new Stamplay.Cobject('post').Collection;
-var user = new Stamplay.User().Model;
-
+Stamplay.init('hnewsv2');
 
 $(document).ready(function () {
 
   /****************************/
   /*  LOGIN AND SIGNUP FORMS  */
   /****************************/
-  $("#loginform").submit(function (event) {
-    event.preventDefault();
-    var acct = $("#loginform input[name='acct']").val();
-    var pw = $("#loginform input[name='pw']").val();
+  $("#loginform").submit(function(e) {
+    e.preventDefault();
+    var credentials = {
+      email : $("#loginform input[name='acct']").val(),
+      password : $("#loginform input[name='pw']").val()
+    }
 
-    user.login(acct, pw)
-    .then(function(){
-      window.location.href = "/index.html";
-      console.log("logged in as" + user.get('displayName'));
-    });
-
+    Stamplay.User.login(credentials)
+      .then(function(res){
+        window.location.href = "/index.html";
+      }, function(err) {
+        console.error("something went wrong!", err);
+      });
   });
 
-  $("#signupform").submit(function (event) {
-    event.preventDefault();
+  $("#signupform").submit(function(e) {
+    e.preventDefault();
     var registrationData = {
         email : $("#signupform input[name='acct']").val(),
         password: $("#signupform input[name='pw']").val()
     };
 
-    user.signup(registrationData).then(function(){
-      window.location.href = "/index.html";
-    }).then(function(){
-      // Something went wrong
-      console.log("something went wrong!");
-    })
+    Stamplay.User.signup(registrationData)
+      .then(function(res){
+        window.location.href = "/index.html";
+      }, function(err){
+        console.error("something went wrong!", err);
+      })
   });
 
   $('#logout').on('click', function (e) {
     e.preventDefault();
-    user.logout();
+    Stamplay.User.logout();
   })
 
 
@@ -56,13 +55,13 @@ $(document).ready(function () {
   /****************************/
   /* INIT NAVBAR W/ USER INFO */
   /****************************/
-  user.currentUser()
-    .then(function () {
-      var userId = user.get('_id');
-      if (userId) {
+  Stamplay.User.currentUser()
+    .then(function(res) {
+      var userId = res.user ? res.user._id : false;
+      if(userId) {
 
         if (window.location.href.indexOf("contact") > -1) {
-          $('#email').val(user.get('email'));
+          $('#email').val(res.user.email);
           $('#email').attr('disabled', 'disabled')
         }
 
@@ -72,17 +71,6 @@ $(document).ready(function () {
         /* Show logout button*/
         $('#logout-btn').show();
         /* Retrieving the user's points */
-
-        $.ajax({
-          method: 'GET',
-          url: '/api/gm/v0/challenges/hnkarma/userchallenges/' + userId,
-          params: {
-            select: 'points'
-          },
-          success: function (response) {
-            $('#user-info').html(user.get('email') + '  ' + response.points + ' | ');
-          }
-        });
 
       } else {
         /* User is not logged*/
@@ -114,13 +102,13 @@ $(document).ready(function () {
     queryParam._id = _id;
   }
 
-  getSortedPostList(posts, queryParam);
+  getSortedPostList(queryParam);
   $('#newest').css('font-weight', 'none');
 
   $("#morenews").on("click", function(event) {
       event.preventDefault();
       queryParam.page += 1;
-      getSortedPostList(posts, queryParam);
+      getSortedPostList(queryParam);
   })
 
 
@@ -130,18 +118,18 @@ $(document).ready(function () {
   $("#sendnews").submit(function (event) {
     event.preventDefault();
 
-    var title = $("input[name='title']").val();
-    var url = $("input[name='url']").val();
-    var description = $("#description").val();
+    var newPost = {
+      title : $("input[name='title']").val(),
+      url : $("input[name='url']").val(),
+      description : $("#description").val()
+    }
 
-    var newPost = new Stamplay.Cobject('post').Model;
-    newPost.set('title', title);
-    newPost.set('url', url);
-    newPost.set('description', description);
-
-    newPost.save().then(function () {
-      window.location.href = "/index.html";
-    });
+    Stamplay.Object("post").save(newPost)
+      .then(function(res) {
+        window.location.href = "/index.html";
+      }, function(err) {
+        console.error("something went wrong!", err);
+      });
   });
 
 
@@ -153,25 +141,28 @@ $(document).ready(function () {
     e.preventDefault();
     var postid = $(this).data('postid');
 
-    var post = new Stamplay.Cobject('post').Model;
-    post.set('_id', postid);
-    post.upVote().then(function () {
-      var score = $("#score_" + postid).data('score');
-      score++;
-      $("#score_" + postid).html(score + ' points');
-    });
+    Stamplay.Object("post").upVote(postid)
+      .then(function () {
+        var score = $("#score_" + postid).data('score');
+        score++;
+        $("#score_" + postid).html(score + ' points');
+      }, function(err) {
+        console.error("something went wrong!", err);
+      });
   });
 
 
   $('body').on('submit', '#submitcomment', function (e) {
     e.preventDefault();
     var postid = $(this).data('postid');
-    var post = new Stamplay.Cobject('post').Model;
-    post.set('_id', postid);
     var comment = $("textarea[name='text']").val();
-    post.comment(comment).then(function () {
-      document.location.reload(true);
-    });
+
+    Stamplay.Object("post").comment(postid, comment)
+      .then(function(res) {
+        document.location.reload(true);
+      }, function(err) {
+        console.error("something went wrong!", err);
+      });
   });
 
 
@@ -180,15 +171,17 @@ $(document).ready(function () {
   /****************************/
   $("#contactform").submit(function (event) {
     event.preventDefault();
-    var email = $("#contactform input[name='email']").val();
-    var message = $("#contactform textarea[name='message']").val();
+    var contact = {
+      email : $("#contactform input[name='email']").val(),
+      message : $("#contactform textarea[name='message']").val()
+    }
 
-    var newContactMessage = new Stamplay.Cobject('contact').Model;
-    newContactMessage.set('email', email);
-    newContactMessage.set('message', message);
-    newContactMessage.save().then(function () {
-      window.location.href = "/index.html";
-    });
+    Stamplay.Object("contact").save()
+      .then(function(res) {
+        window.location.href = "/index.html";
+      }, function(err) {
+        console.error("something went wrong!", err);
+      });
 
   });
 
@@ -197,8 +190,8 @@ $(document).ready(function () {
   /****************************/
   /* ALGOLIA TYPEAHEAD SEARCH */
   /****************************/
-  var algolia = algoliasearch('KMI9X9PKNJ','69aebc4572e2e34f6724a1f44e1c601c' );
-  var index = algolia.initIndex('posts');
+  var algolia = algoliasearch('7TMV8F22UN','b5e5aa05c764aa1718bc96b793078703' );
+  var index = algolia.initIndex('hackernewsposts');
   $('#post-search').typeahead({hint: false}, {
     source: index.ttAdapter({hitsPerPage: 3}),
     displayKey: 'title',
@@ -232,20 +225,21 @@ $(document).ready(function () {
 /****************************/
 function getPostDetail() {
   var postId = Utils.getParameterByName("id");
-  var post = new Stamplay.Cobject('post').Model;
-  post.fetch(postId).then(function () {
 
+  Stamplay.Object("post").get({ _id : postId})
+  .then(function(res) {
+    var post = res.data[0];
     var viewData = {
-      id : post.get('_id'),
-      url : post.get('url'),
-      shortUrl : Utils.getHostname(post.get('url')),
-      title : post.get('title'),
-      dt_create : Utils.formatDate(post.get('dt_create')),
-      votesLength : post.get('actions').votes.users_upvote.length
+      id : post._id,
+      url : post.url,
+      shortUrl : Utils.getHostname(post.url),
+      title : post.title,
+      dt_create : Utils.formatDate(post.dt_create),
+      votesLength : post.actions.votes.users_upvote.length
     }
     Utils.renderTemplate('post-detail', viewData, '#postcontent');
 
-    post.get('actions').comments.forEach(function (comment) {
+    post.actions.comments.forEach(function (comment) {
       var viewData = {
         displayName: comment.displayName,
         dt_create: Utils.formatDate(comment.dt_create),
@@ -263,26 +257,25 @@ function getPostDetail() {
 /****************************/
 /*     RENDER POST LIST     */
 /****************************/
-function getSortedPostList(posts, queryParam) {
+function getSortedPostList(queryParam) {
 
-  posts.fetch(queryParam).then(function () {
+  Stamplay.Object("post").get(queryParam)
+  .then(function(res) {
     var viewDataArray = [];
     var post_count = (queryParam.page - 1) * queryParam.per_page;
     $('#newstable').html('');
-    posts.instance.forEach(function (post, count) {
-
+    res.data.forEach(function (post, count) {
       var viewData = {
-        id: post.get('_id'),
+        id: post._id,
         count : post_count += 1,
-        url: post.get('url'),
-        shortUrl: Utils.getHostname(post.get('url')),
-        title: post.get('title'),
-        dt_create: Utils.formatDate(post.get('dt_create')),
-        commentLength: post.get('actions').comments.length,
-        votesLength: post.get('actions').votes.users_upvote.length
+        url: post.url,
+        shortUrl: Utils.getHostname(post.url),
+        title: post.title,
+        dt_create: Utils.formatDate(post.dt_create),
+        commentLength: post.actions.comments.length,
+        votesLength: post.actions.votes.users_upvote.length
       }
       viewDataArray.push(viewData)
-
     });
     Utils.renderTemplate('list-elem', viewDataArray, '#newstable');
 
