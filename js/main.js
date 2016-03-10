@@ -46,9 +46,10 @@ $(document).ready(function () {
   /****************************/
   $('#reset-pw').on('click', function (e) {
     e.preventDefault();
-    user.resetPassword('giuliano.iacobelli@gmail.com','1111').then(function(){
-      window.location.href = "/index.html";
-    })
+    Stamplay.User.resetPassword({ email : 'giuliano.iacobelli@gmail.com', password : '1111' })
+      .then(function(){
+        window.location.href = "/index.html";
+      })
   })
 
 
@@ -59,11 +60,14 @@ $(document).ready(function () {
     .then(function(res) {
       var userId = res.user ? res.user._id : false;
       if(userId) {
+        var email = res.user.email;
+        var score = res.user.score ? res.user.score : 0;
 
         if (window.location.href.indexOf("contact") > -1) {
-          $('#email').val(res.user.email);
+          $('#email').val(email);
           $('#email').attr('disabled', 'disabled')
         }
+        $("#user-info").html("<span>"+ email +"</span> <span>("+ score + ")</span>");
 
         $('#login-btn').hide();
         /* Show submit button*/
